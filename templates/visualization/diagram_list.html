@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+
+{% block title %}Diagrams - Asset Manager{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-chart-network"></i> Network Diagrams</h1>
+    <a href="{% url 'admin:visualization_diagram_add' %}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Create Diagram
+    </a>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="input-group">
+            <input type="text" class="form-control" placeholder="Search diagrams..." id="searchInput">
+            <button class="btn btn-outline-secondary" type="button" title="Search">
+                <i class="fas fa-search"></i>
+            </button>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <select class="form-select" id="typeFilter" title="Filter by diagram type">
+            <option value="">All Types</option>
+            <option value="network">Network Topology</option>
+            <option value="rack">Rack Elevation</option>
+            <option value="process">Process Flow</option>
+            <option value="custom">Custom</option>
+        </select>
+    </div>
+</div>
+
+{% if diagrams %}
+    <div class="row">
+        {% for diagram in diagrams %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-chart-network"></i> {{ diagram.name }}
+                        </h5>
+                        <p class="card-text text-muted">
+                            {{ diagram.description|default:"No description" }}
+                        </p>
+                        
+                        <p>
+                            <span class="badge bg-primary">{{ diagram.get_diagram_type_display }}</span>
+                            {% if diagram.is_published %}
+                                <span class="badge bg-success">Published</span>
+                            {% else %}
+                                <span class="badge bg-warning">Draft</span>
+                            {% endif %}
+                        </p>
+                        
+                        {% if diagram.devices.count %}
+                            <p>
+                                <small class="text-muted">
+                                    <i class="fas fa-server"></i> {{ diagram.devices.count }} device(s)
+                                </small>
+                            </p>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer bg-white">
+                        <a href="{{ diagram.get_absolute_url }}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-eye"></i> View
+                        </a>
+                        <a href="{% url 'admin:visualization_diagram_change' diagram.id %}" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Pagination -->
+    {% if is_paginated %}
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1">First</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                    </li>
+                {% endif %}
+                
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% else %}
+                        <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Last</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% endif %}
+{% else %}
+    <div class="alert alert-info" role="alert">
+        <i class="fas fa-info-circle"></i> No diagrams found. <a href="{% url 'admin:visualization_diagram_add' %}">Create one now</a>.
+    </div>
+{% endif %}
+
+{% endblock %}

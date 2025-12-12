@@ -1,0 +1,323 @@
+{% extends 'base.html' %}
+
+{% block title %}Home - Asset Manager{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="mb-5 p-5 rounded-lg bg-gradient text-white text-center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+    <h1 class="display-4 fw-bold mb-3">
+        <i class="fas fa-network-wired"></i> Asset-Linked Knowledge Base
+    </h1>
+    <p class="lead mb-4">
+        Your centralized IT infrastructure management and documentation system.
+        Real-time network topology, device tracking, and interactive diagrams.
+    </p>
+    <div class="btn-group" role="group">
+        <a href="{% url 'inventory:device-list' %}" class="btn btn-light btn-lg">
+            <i class="fas fa-server"></i> Browse Devices
+        </a>
+        <a href="{% url 'admin:index' %}" class="btn btn-outline-light btn-lg">
+            <i class="fas fa-cog"></i> Admin Panel
+        </a>
+    </div>
+</div>
+
+<!-- Statistics Section -->
+<div class="row mb-5">
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="card stat-card h-100 text-center">
+            <div class="card-body">
+                <i class="fas fa-server fa-3x text-primary mb-3"></i>
+                <h5 class="card-title">Active Devices</h5>
+                <h2 class="text-primary">{{ total_devices }}</h2>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="card stat-card h-100 text-center">
+            <div class="card-body">
+                <i class="fas fa-ethernet fa-3x text-success mb-3"></i>
+                <h5 class="card-title">Interfaces</h5>
+                <h2 class="text-success">{{ total_interfaces }}</h2>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="card stat-card h-100 text-center">
+            <div class="card-body">
+                <i class="fas fa-chart-network fa-3x text-info mb-3"></i>
+                <h5 class="card-title">Diagrams</h5>
+                <h2 class="text-info">{{ total_diagrams }}</h2>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="card stat-card h-100 text-center">
+            <div class="card-body">
+                <i class="fas fa-book fa-3x text-warning mb-3"></i>
+                <h5 class="card-title">Articles</h5>
+                <h2 class="text-warning">{{ total_articles }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content Grid -->
+<div class="row">
+    <!-- Recent Devices -->
+    <div class="col-lg-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-clock"></i> Recently Updated Devices
+                </h5>
+            </div>
+            <div class="list-group list-group-flush">
+                {% if recent_devices %}
+                    {% for device in recent_devices %}
+                        <a href="{{ device.get_absolute_url }}" class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">{{ device.name }}</h6>
+                                    <small class="text-muted">{{ device.get_device_type_display }}</small>
+                                </div>
+                                <span class="badge {% if device.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                                    {% if device.is_active %}Active{% else %}Inactive{% endif %}
+                                </span>
+                            </div>
+                        </a>
+                    {% endfor %}
+                {% else %}
+                    <div class="list-group-item">
+                        <p class="text-muted mb-0">No devices yet. <a href="{% url 'admin:inventory_device_add' %}">Create one</a>.</p>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="card-footer bg-light">
+                <a href="{% url 'inventory:device-list' %}" class="btn btn-sm btn-primary w-100">
+                    <i class="fas fa-arrow-right"></i> View All Devices
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Diagrams -->
+    <div class="col-lg-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-clock"></i> Recent Diagrams
+                </h5>
+            </div>
+            <div class="list-group list-group-flush">
+                {% if recent_diagrams %}
+                    {% for diagram in recent_diagrams %}
+                        <a href="{{ diagram.get_absolute_url }}" class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">{{ diagram.name }}</h6>
+                                    <small class="text-muted">{{ diagram.get_diagram_type_display }}</small>
+                                </div>
+                                <span class="badge bg-info">{{ diagram.devices.count }} devices</span>
+                            </div>
+                        </a>
+                    {% endfor %}
+                {% else %}
+                    <div class="list-group-item">
+                        <p class="text-muted mb-0">No diagrams yet. <a href="{% url 'admin:visualization_diagram_add' %}">Create one</a>.</p>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="card-footer bg-light">
+                <a href="{% url 'visualization:diagram-list' %}" class="btn btn-sm btn-info w-100">
+                    <i class="fas fa-arrow-right"></i> View All Diagrams
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Articles -->
+    <div class="col-lg-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="fas fa-clock"></i> Recent Articles
+                </h5>
+            </div>
+            <div class="list-group list-group-flush">
+                {% if recent_articles %}
+                    {% for article in recent_articles %}
+                        <a href="{{ article.get_absolute_url }}" class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">{{ article.title }}</h6>
+                                    <small class="text-muted">{{ article.created_at|date:"M d" }}</small>
+                                </div>
+                                <span class="badge bg-warning">
+                                    {% if article.author %}
+                                        {{ article.author.name|default:article.author.email|truncatechars:15 }}
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </a>
+                    {% endfor %}
+                {% else %}
+                    <div class="list-group-item">
+                        <p class="text-muted mb-0">No articles yet. <a href="{% url 'admin:blog_article_add' %}">Create one</a>.</p>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="card-footer bg-light">
+                <a href="{% url 'blog:article-list' %}" class="btn btn-sm btn-warning w-100">
+                    <i class="fas fa-arrow-right"></i> View All Articles
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Device Type Distribution -->
+{% if device_types %}
+<div class="row mt-5">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-pie"></i> Device Distribution
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="deviceChart" height="50"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-list"></i> Device Breakdown
+                </h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <tbody>
+                        {% for dtype in device_types %}
+                            <tr>
+                                <td>
+                                    <span class="badge bg-secondary">
+                                        {% if dtype.device_type == 'server' %}
+                                            <i class="fas fa-server"></i>
+                                        {% elif dtype.device_type == 'switch' %}
+                                            <i class="fas fa-network-wired"></i>
+                                        {% elif dtype.device_type == 'firewall' %}
+                                            <i class="fas fa-shield-alt"></i>
+                                        {% else %}
+                                            <i class="fas fa-desktop"></i>
+                                        {% endif %}
+                                    </span>
+                                    {{ dtype.device_type|title }}
+                                </td>
+                                <td>
+                                    <strong>{{ dtype.count }}</strong>
+                                </td>
+                                <td>
+                                    <div class="progress" style="height: 10px;">
+                                        <div class="progress-bar" style="width: {% widthratio dtype.count total_devices 100 %}%;"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Feature Highlight -->
+<div class="row mt-5 mb-4">
+    <div class="col-12">
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            <h4 class="alert-heading">
+                <i class="fas fa-lightbulb"></i> Pro Tips
+            </h4>
+            <ul class="mb-0">
+                <li><strong>Add Devices:</strong> Go to Admin → Devices to create infrastructure assets</li>
+                <li><strong>Create Network Topology:</strong> Connect devices via Interfaces and Connections</li>
+                <li><strong>Build Diagrams:</strong> Group related devices into diagrams for visualization</li>
+                <li><strong>Document Everything:</strong> Write articles and embed diagrams inline</li>
+                <li><strong>Interactive Maps:</strong> View network topology on device detail pages</li>
+            </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js Configuration -->
+<script>
+    {% if device_types %}
+    const ctx = document.getElementById('deviceChart').getContext('2d');
+    const labels = {{ device_types|safe }};
+    const data = {
+        labels: [
+            {% for dtype in device_types %}
+                '{{ dtype.device_type|title }}',
+            {% endfor %}
+        ],
+        datasets: [{
+            data: [
+                {% for dtype in device_types %}
+                    {{ dtype.count }},
+                {% endfor %}
+            ],
+            backgroundColor: [
+                '#FF6B6B',
+                '#4ECDC4',
+                '#45B7D1',
+                '#96CEB4',
+                '#FFEAA7',
+                '#DFE6E9',
+                '#A29BFE',
+                '#FD79A8'
+            ]
+        }]
+    };
+    
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: data,
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+    {% endif %}
+</script>
+
+<style>
+    .stat-card {
+        border: none;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    }
+    
+    .bg-gradient {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+</style>
+
+{% endblock %}

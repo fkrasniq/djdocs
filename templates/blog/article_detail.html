@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ article.title }} - Asset Manager{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{% url 'blog:article-list' %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Articles
+    </a>
+</div>
+
+<article class="container">
+    <header class="mb-4">
+        <h1>{{ article.title }}</h1>
+        <p class="text-muted">
+            {% if article.author %}
+                <i class="fas fa-user"></i> {{ article.author.name|default:article.author.email }}
+            {% endif %}
+            | <i class="fas fa-calendar"></i> {{ article.created_at|date:"F d, Y" }}
+        </p>
+    </header>
+    
+    {% if article.description %}
+        <div class="alert alert-info" role="alert">
+            <strong>Summary:</strong> {{ article.description }}
+        </div>
+    {% endif %}
+    
+    <!-- Main Content -->
+    <div class="card mb-4">
+        <div class="card-body">
+            {{ article.content|safe }}
+        </div>
+    </div>
+    
+    <!-- Embedded Content -->
+    {% if embeds %}
+        <h3>Visual Components</h3>
+        
+        {% for embed in embeds %}
+            <div class="card mb-4">
+                {% if embed.caption %}
+                    <div class="card-header">
+                        <h5 class="mb-0">{{ embed.caption }}</h5>
+                    </div>
+                {% endif %}
+                
+                <div class="card-body">
+                    {% if embed.embed_type == 'diagram' and embed.diagram %}
+                        <!-- Embedded Diagram -->
+                        <div style="margin: auto;">
+                            {% if embed.diagram.mermaid_code %}
+                                <div class="mermaid">
+                                    {{ embed.diagram.mermaid_code }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% elif embed.embed_type == 'device' and embed.device %}
+                        <!-- Embedded Device Info -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p>
+                                    <strong>Device:</strong> {{ embed.device.name }}
+                                </p>
+                                <p>
+                                    <strong>Type:</strong> {{ embed.device.get_device_type_display }}
+                                </p>
+                                {% if embed.device.ip_address %}
+                                    <p>
+                                        <strong>IP:</strong> <code>{{ embed.device.ip_address }}</code>
+                                    </p>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <a href="{{ embed.device.get_absolute_url }}" class="btn btn-primary">
+                                    <i class="fas fa-arrow-right"></i> View Device Details
+                                </a>
+                            </div>
+                        </div>
+                    {% elif embed.embed_type == 'mermaid' and embed.mermaid_code %}
+                        <!-- Embedded Mermaid Diagram -->
+                        <div class="mermaid">
+                            {{ embed.mermaid_code }}
+                        </div>
+                    {% elif embed.embed_type == 'chart' %}
+                        <!-- Chart Placeholder -->
+                        <div class="alert alert-info">
+                            <i class="fas fa-chart-bar"></i> Chart visualization
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    {% endif %}
+</article>
+
+<div class="mt-4 mb-4">
+    <a href="{% url 'admin:blog_article_change' article.id %}" class="btn btn-outline-secondary">
+        <i class="fas fa-edit"></i> Edit Article
+    </a>
+</div>
+
+{% endblock %}

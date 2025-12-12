@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+
+{% block title %}Devices - Asset Manager{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-server"></i> Network Devices</h1>
+    <a href="{% url 'admin:inventory_device_add' %}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Add Device
+    </a>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="input-group">
+            <input type="text" class="form-control" placeholder="Search devices..." id="searchInput">
+            <button class="btn btn-outline-secondary" type="button">
+                <i class="fas fa-search"></i>
+            </button>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <select class="form-select" id="typeFilter">
+            <option value="">All Types</option>
+            <option value="server">Server</option>
+            <option value="switch">Network Switch</option>
+            <option value="firewall">Firewall</option>
+            <option value="router">Router</option>
+            <option value="printer">Printer</option>
+            <option value="workstation">Workstation</option>
+        </select>
+    </div>
+    <div class="col-md-3">
+        <select class="form-select" id="statusFilter">
+            <option value="">All Status</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+        </select>
+    </div>
+</div>
+
+{% if devices %}
+    <div class="row">
+        {% for device in devices %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-start mb-3">
+                            {% if device.device_type == 'server' %}
+                                <i class="fas fa-server device-icon"></i>
+                            {% elif device.device_type == 'switch' %}
+                                <i class="fas fa-network-wired device-icon"></i>
+                            {% elif device.device_type == 'firewall' %}
+                                <i class="fas fa-shield-alt device-icon"></i>
+                            {% elif device.device_type == 'router' %}
+                                <i class="fas fa-route device-icon"></i>
+                            {% else %}
+                                <i class="fas fa-desktop device-icon"></i>
+                            {% endif %}
+                            <div class="flex-grow-1 ms-3">
+                                <h5 class="card-title mb-1">{{ device.name }}</h5>
+                                <small class="text-muted">{{ device.get_device_type_display }}</small>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-2">
+                            {% if device.is_active %}
+                                <span class="badge bg-success">Active</span>
+                            {% else %}
+                                <span class="badge bg-danger">Inactive</span>
+                            {% endif %}
+                        </div>
+                        
+                        {% if device.ip_address %}
+                            <p class="mb-2">
+                                <small><strong>IP:</strong> {{ device.ip_address }}</small>
+                            </p>
+                        {% endif %}
+                        
+                        {% if device.location %}
+                            <p class="mb-2">
+                                <small><strong>Location:</strong> {{ device.location }}</small>
+                            </p>
+                        {% endif %}
+                        
+                        {% if device.interfaces.count %}
+                            <p class="mb-3">
+                                <small><strong>Interfaces:</strong> {{ device.interfaces.count }}</small>
+                            </p>
+                        {% endif %}
+                        
+                        <a href="{{ device.get_absolute_url }}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-eye"></i> View Details
+                        </a>
+                        <a href="{% url 'admin:inventory_device_change' device.id %}" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Pagination -->
+    {% if is_paginated %}
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1">First</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                    </li>
+                {% endif %}
+                
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% else %}
+                        <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Last</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% endif %}
+{% else %}
+    <div class="alert alert-info" role="alert">
+        <i class="fas fa-info-circle"></i> No devices found. <a href="{% url 'admin:inventory_device_add' %}">Create one now</a>.
+    </div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,207 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ device.name }} - Asset Manager{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{% url 'inventory:device-list' %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Devices
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Device Information -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    {% if device.device_type == 'server' %}
+                        <i class="fas fa-server"></i>
+                    {% elif device.device_type == 'switch' %}
+                        <i class="fas fa-network-wired"></i>
+                    {% elif device.device_type == 'firewall' %}
+                        <i class="fas fa-shield-alt"></i>
+                    {% else %}
+                        <i class="fas fa-desktop"></i>
+                    {% endif %}
+                    {{ device.name }}
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <p>
+                            <strong>Type:</strong> {{ device.get_device_type_display }}
+                        </p>
+                        <p>
+                            <strong>Status:</strong>
+                            {% if device.is_active %}
+                                <span class="badge bg-success">Active</span>
+                            {% else %}
+                                <span class="badge bg-danger">Inactive</span>
+                            {% endif %}
+                        </p>
+                        {% if device.ip_address %}
+                            <p>
+                                <strong>IP Address:</strong> <code>{{ device.ip_address }}</code>
+                            </p>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        {% if device.os_type %}
+                            <p>
+                                <strong>OS:</strong> {{ device.get_os_type_display }}
+                            </p>
+                        {% endif %}
+                        {% if device.serial_number %}
+                            <p>
+                                <strong>Serial:</strong> {{ device.serial_number }}
+                            </p>
+                        {% endif %}
+                        {% if device.location %}
+                            <p>
+                                <strong>Location:</strong> {{ device.location }}
+                            </p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                {% if device.description %}
+                    <hr>
+                    <p><strong>Description:</strong></p>
+                    <p>{{ device.description }}</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Interfaces -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Network Interfaces</h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>IP Address</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for interface in interfaces %}
+                            <tr>
+                                <td>{{ interface.name }}</td>
+                                <td><span class="badge bg-info">{{ interface.get_interface_type_display }}</span></td>
+                                <td>
+                                    {% if interface.ip_address %}
+                                        <code>{{ interface.ip_address }}</code>
+                                    {% else %}
+                                        <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if interface.is_active %}
+                                        <span class="badge bg-success">Active</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Down</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">No interfaces defined</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Network Topology -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Connected Devices</h5>
+            </div>
+            <div class="card-body" style="height: 400px;">
+                <div id="network-diagram" style="height: 100%;"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Quick Stats -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Quick Info</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center">
+                    <div class="display-4 text-primary">{{ interfaces.count }}</div>
+                    <p class="text-muted">Network Interfaces</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Related Diagrams -->
+        {% if device.diagrams.count %}
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Diagrams</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    {% for diagram in device.diagrams.all %}
+                        <a href="{{ diagram.get_absolute_url }}" class="list-group-item list-group-item-action">
+                            <i class="fas fa-chart-network"></i> {{ diagram.name }}
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    // Load network topology using Vis.js
+    fetch("{% url 'inventory:device-topology-json' device.slug %}")
+        .then(response => response.json())
+        .then(data => {
+            const nodes = new vis.DataSet(data.nodes);
+            const edges = new vis.DataSet(data.edges);
+            const container = document.getElementById('network-diagram');
+            
+            const options = {
+                physics: {
+                    enabled: true,
+                    stabilization: {iterations: 200}
+                },
+                nodes: {
+                    shape: 'box',
+                    margin: 10,
+                    widthConstraint: {maximum: 200},
+                    font: {size: 16}
+                },
+                edges: {
+                    arrows: 'to',
+                    smooth: {type: 'continuous'},
+                    font: {size: 12}
+                }
+            };
+            
+            const network = new vis.Network(container, {nodes, edges}, options);
+            
+            // Click handler
+            network.on('click', function(params) {
+                if (params.nodes.length > 0) {
+                    const nodeId = params.nodes[0];
+                    // You can implement navigation here if needed
+                    console.log('Clicked node:', nodeId);
+                }
+            });
+        })
+        .catch(error => console.error('Error loading topology:', error));
+</script>
+
+{% endblock %}
